@@ -5,6 +5,8 @@ import { prettyObject } from "@/app/utils/format";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "../../auth";
 import { requestOpenai } from "../../common";
+import { grantCode } from "../../grant";
+import { ACCESS_CODE_PREFIX } from "../../../constant";
 
 const ALLOWD_PATH = new Set(Object.values(OpenaiPath));
 
@@ -18,6 +20,15 @@ function getModels(remoteModelRes: OpenAIListModelResponse) {
   }
 
   return remoteModelRes;
+}
+function parseApiKey(bearToken: string) {
+  const token = bearToken.trim().replaceAll("Bearer ", "").trim();
+  const isOpenAiKey = !token.startsWith(ACCESS_CODE_PREFIX);
+
+  return {
+    accessCode: isOpenAiKey ? "" : token.slice(ACCESS_CODE_PREFIX.length),
+    apiKey: isOpenAiKey ? token : "",
+  };
 }
 
 async function handle(
@@ -45,11 +56,26 @@ async function handle(
     );
   }
 
-  const authResult = auth(req);
-  if (authResult.error) {
-    return NextResponse.json(authResult, {
-      status: 401,
-    });
+  const authToken = req.headers.get("Authorization") ?? "";
+  // check if it is openai api key or user token
+  const { accessCode, apiKey } = parseApiKey(authToken);
+  const serverConfig = getServerSideConfig();
+
+  if (serverConfig.needCode && !apiKey) {
+    let grantRes = await grantCode(accessCode);
+    console.log("[OpenAI Route] grantCode ", grantRes);
+    if (grantRes && grantRes.code != 1000) {
+      return NextResponse.json(grantRes, {
+        status: 401,
+      });
+    }
+  } else {
+    const authResult = auth(req);
+    if (authResult.error) {
+      return NextResponse.json(authResult, {
+        status: 401,
+      });
+    }
   }
 
   try {
@@ -75,4 +101,22 @@ export const GET = handle;
 export const POST = handle;
 
 export const runtime = "edge";
-export const preferredRegion = ['arn1', 'bom1', 'cdg1', 'cle1', 'cpt1', 'dub1', 'fra1', 'gru1', 'hnd1', 'iad1', 'icn1', 'kix1', 'lhr1', 'pdx1', 'sfo1', 'sin1', 'syd1'];
+export const preferredRegion = [
+  "arn1",
+  "bom1",
+  "cdg1",
+  "cle1",
+  "cpt1",
+  "dub1",
+  "fra1",
+  "gru1",
+  "hnd1",
+  "iad1",
+  "icn1",
+  "kix1",
+  "lhr1",
+  "pdx1",
+  "sfo1",
+  "sin1",
+  "syd1",
+];

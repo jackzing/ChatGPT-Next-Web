@@ -80,7 +80,7 @@ export const getServerSideConfig = () => {
     azureApiKey: process.env.AZURE_API_KEY,
     azureApiVersion: process.env.AZURE_API_VERSION,
 
-    needCode: ACCESS_CODES.size > 0,
+    needCode: true, //ACCESS_CODES.size > 0,
     code: process.env.CODE,
     codes: ACCESS_CODES,
 

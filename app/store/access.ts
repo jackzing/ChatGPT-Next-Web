@@ -15,7 +15,7 @@ const DEFAULT_OPENAI_URL =
   getClientConfig()?.buildMode === "export" ? DEFAULT_API_HOST : ApiPath.OpenAI;
 
 const DEFAULT_ACCESS_STATE = {
-  accessCode: "",
+  accessCode: "your access code",
   useCustomConfig: false,
 
   provider: ServiceProvider.OpenAI,
