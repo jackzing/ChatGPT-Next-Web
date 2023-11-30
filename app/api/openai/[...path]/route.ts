@@ -69,6 +69,19 @@ async function handle(
         status: 401,
       });
     }
+    //inject server key
+    const serverApiKey = serverConfig.isAzure
+      ? serverConfig.azureApiKey
+      : serverConfig.apiKey;
+    if (serverApiKey) {
+      console.log("[Auth] use system api key");
+      req.headers.set(
+        "Authorization",
+        `${serverConfig.isAzure ? "" : "Bearer "}${serverApiKey}`,
+      );
+    } else {
+      console.log("[Auth] admin did not provide an api key");
+    }
   } else {
     const authResult = auth(req);
     if (authResult.error) {
